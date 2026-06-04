@@ -1,69 +1,62 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
-import { RoleCard } from '@/components/ui/RoleCard';
-import { Modal } from '@/components/ui/Modal';
-import { SignInForm } from '@/components/ui/SignInForm';
-import { StatCard } from '@/components/ui/StatCard';
-import { Role, ROLE_REDIRECT } from '@/types/auth';
+import React, { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
+import { Modal } from "@/components/ui/Modal";
+import { SignIn } from "./auth/signin/page";
+import { Register } from "./auth/register/page";
+import { StatCard } from "@/components/ui/StatCard";
+import { Role, ROLE_REDIRECT } from "@/types/auth";
 
-const ALL_ROLES: Role[] = ['RESIDENT', 'EMPLOYEE', 'DEPT_ADMIN', 'SUPER_ADMIN'];
+type ModalView = "signin" | "register" | null;
 
 const STATS = [
-  { value: '4',         label: 'Role-based portals' },
-  { value: '24/7',      label: 'Service availability' },
-  { value: 'Real-time', label: 'Issue tracking' },
-  { value: 'SSO',       label: 'Single sign-on' },
+  { value: "4",         label: "Role-based portals" },
+  { value: "24/7",      label: "Service availability" },
+  { value: "Real-time", label: "Issue tracking" },
+  { value: "SSO",       label: "Single sign-on" },
 ];
 
 export default function LandingPage() {
   const router = useRouter();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<Role>('RESIDENT');
+  const searchParams = useSearchParams();
+  const [view, setView] = useState<ModalView>(null);
+  const [selectedRole] = useState<Role>("RESIDENT");
 
-  function openSignIn(role?: Role) {
-    if (role) setSelectedRole(role);
-    setModalOpen(true);
-  }
+  useEffect(() => {
+    if (searchParams.get("signin") === "true") setView("signin");
+  }, [searchParams]);
 
   function handleSignInSuccess() {
-    setModalOpen(false);
+    setView(null);
     router.push(ROLE_REDIRECT[selectedRole]);
+  }
+
+  function handleRegisterSuccess() {
+    setView("signin");
   }
 
   return (
     <div className="page">
-      <Navbar onSignInClick={() => openSignIn()} />
+      <Navbar onSignInClick={() => setView("signin")} />
 
-      {/* Hero */}
       <section className="hero">
         <p className="hero__eyebrow">Smart City Platform</p>
         <h1 className="hero__title">
-          One city.<br />
+          One city.
+          <br />
           <span className="hero__title--accent">Connected.</span>
         </h1>
         <p className="hero__subtitle">
-          Manage services, infrastructure, and residents through a unified digital
-          platform built for modern urban governance.
+          Manage services, infrastructure, and residents through a unified
+          digital platform built for modern urban governance.
         </p>
-      </section>
-
-      {/* Role cards */}
-      <section className="roles-section">
-        <p className="roles-section__label">Access by role</p>
-        <div className="roles-grid">
-          {ALL_ROLES.map((role) => (
-            <RoleCard key={role} role={role} onClick={openSignIn} />
-          ))}
-        </div>
       </section>
 
       <hr className="divider" />
 
-      {/* Stats */}
       <section className="stats-section">
         <div className="stats-grid">
           {STATS.map((s) => (
@@ -75,14 +68,28 @@ export default function LandingPage() {
       <div className="flex-1" />
       <Footer />
 
-      {/* Sign-in modal */}
       <Modal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        open={view === "signin"}
+        onClose={() => setView(null)}
         title="Sign in"
         subtitle="Access your city portal"
       >
-        <SignInForm defaultRole={selectedRole} onSuccess={handleSignInSuccess} />
+        <SignIn
+          onSuccess={handleSignInSuccess}
+          onSwitchToRegister={() => setView("register")}
+        />
+      </Modal>
+
+      <Modal
+        open={view === "register"}
+        onClose={() => setView(null)}
+        title="Create Account"
+        subtitle="Register as a resident to get started"
+      >
+        <Register
+          onSuccess={handleRegisterSuccess}
+          onSwitchToSignIn={() => setView("signin")}
+        />
       </Modal>
     </div>
   );
