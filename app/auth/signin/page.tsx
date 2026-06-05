@@ -1,80 +1,101 @@
 "use client";
 
-import React, { useState } from "react";
-import { signIn } from "next-auth/react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { useAppDispatch, useAppSelector } from "../../store/hook";
+import { loginUser, clearError } from "../../store/slices/authSlice";
+import type { Role } from "../../store/slices/authSlice";
 
-interface SignInFormProps {
-  onSuccess?: () => void;
+// const ROLE_OPTIONS: { value: Role; label: string }[] = [
+//   { value: 'RESIDENT',         label: 'Resident' },
+//   { value: 'DEPT_ADMIN',       label: 'Department Admin' },
+//   { value: 'KNOWLEDGE_WORKER', label: 'Knowledge Worker' },
+// ];
+
+interface SignInProps {
   onSwitchToRegister?: () => void;
+  onClose?: () => void;
 }
 
-export function SignIn({ onSuccess, onSwitchToRegister }: SignInFormProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+export function SignIn({ onSwitchToRegister, onClose }: SignInProps) {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+  const { loading, error, user } = useAppSelector((s) => s.auth);
+
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  // const [role, setRole] = React.useState<Role>('RESIDENT');
+
+  useEffect(() => {
+    if (user) {
+      const role = (user as any)?.user_roles?.[0]?.role?.name as
+        | Role
+        | undefined;
+      if (role) {
+        onClose?.();
+          router.push("/dashboard/resident");
+      }
+    }
+  }, [user, router, onClose]);
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+    };
+  }, []);
+
+  function handleError() {
+    return error ? (
+      <p className="form-field__error">
+        <i className="ti ti-alert-circle" /> {error}
+      </p>
+    ) : null;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    const result = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
-
-    setLoading(false);
-
-    if (result?.error) {
-      setError("Invalid credentials. Please try again.");
-      return;
-    }
-
-    onSuccess?.();
+    dispatch(loginUser({ email, password }));
   }
 
   return (
-    <>
-      <form onSubmit={handleSubmit} className="modal__form">
-        <Input
-          label="Email"
-          type="email"
-          placeholder="you@city.gov"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          iconLeft="ti-mail"
-          required
-        />
-        <Input
-          label="Password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          iconLeft="ti-lock"
-          required
-        />
+    <form onSubmit={handleSubmit} className="modal__form">
+      <Input
+        label="Email"
+        type="email"
+        placeholder="you@city.gov"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        iconLeft="ti-mail"
+        required
+      />
+      <Input
+        label="Password"
+        type="password"
+        placeholder="••••••••"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        iconLeft="ti-lock"
+        required
+      />
 
-        {error && <p className="form-field__error"><i className="ti ti-alert-circle" aria-hidden="true" />{error}</p>}
-
-        <Button type="submit" variant="primary" size="md" loading={loading} full>
-          {loading ? "Signing in..." : "Continue"}
-        </Button>
-      </form>
+      <Button type="submit" loading={loading} className="w-full">
+        Continue
+      </Button>
+      <div className="center-align">
+      {handleError()}
+      </div>
       <div className="auth-switch">
         Don't have an account?{" "}
         <button
           type="button"
-          className="auth-switch__link"
           onClick={onSwitchToRegister}
+          className="auth-switch__link"
         >
           Sign Up
         </button>
       </div>
-    </>
+    </form>
   );
 }

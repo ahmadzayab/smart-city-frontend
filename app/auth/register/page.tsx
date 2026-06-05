@@ -1,64 +1,58 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { useAppDispatch, useAppSelector } from "../../store/hook";
+import { registerResident, clearError } from "../../store/slices/authSlice";
 
-interface RegisterFormProps {
-  onSuccess?: () => void;
+interface RegisterProps {
   onSwitchToSignIn?: () => void;
+  onClose?: () => void;
 }
 
-export function Register({ onSuccess, onSwitchToSignIn }: RegisterFormProps) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [houseNo, setHouseNo] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+export function Register({ onSwitchToSignIn, onClose }: RegisterProps) {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+  const { loading, error, user } = useAppSelector((s) => s.auth);
+
+  const [email, setEmail] = React.useState("");
+  const [phoneNumber, setPhoneNumber] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [localError, setLocalError] = React.useState("");
+
+  useEffect(() => {
+    if (user) {
+      onClose?.();
+      router.push("/dashboard/resident");
+    }
+  }, [user]);
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setLocalError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setLocalError("Passwords do not match.");
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const res = await fetch("http://localhost:3001/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          phone_number: phoneNumber,
-          house_no: houseNo,
-          password,
-          role: "RESIDENT",
-        }),
-      });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) throw new Error(data?.message || "Registration failed.");
-
-      onSuccess?.();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setLoading(false);
-    }
+    dispatch(registerResident({ email, password, phone_number: phoneNumber }));
   }
+
+  const displayError = localError || error;
 
   return (
     <form onSubmit={handleSubmit} className="modal__form">
-      <Input
+      {/* <Input
         label="Full Name"
         type="text"
         placeholder="Your name"
@@ -66,7 +60,7 @@ export function Register({ onSuccess, onSwitchToSignIn }: RegisterFormProps) {
         onChange={(e) => setName(e.target.value)}
         iconLeft="ti-user"
         required
-      />
+      /> */}
       <Input
         label="Email"
         type="email"
@@ -85,7 +79,7 @@ export function Register({ onSuccess, onSwitchToSignIn }: RegisterFormProps) {
         iconLeft="ti-phone"
         required
       />
-      <Input
+      {/* <Input
         label="House No"
         type="text"
         placeholder="House 12, Block A"
@@ -93,7 +87,7 @@ export function Register({ onSuccess, onSwitchToSignIn }: RegisterFormProps) {
         onChange={(e) => setHouseNo(e.target.value)}
         iconLeft="ti-home"
         required
-      />
+      /> */}
       <Input
         label="Password"
         type="password"
@@ -113,15 +107,21 @@ export function Register({ onSuccess, onSwitchToSignIn }: RegisterFormProps) {
         required
       />
 
-      {error && <p className="form-field__error"><i className="ti ti-alert-circle" aria-hidden="true" />{error}</p>}
-
-      <Button type="submit" variant="primary" size="md" loading={loading} full>
-        {loading ? "Creating account..." : "Create Account"}
+      <Button type="submit" loading={loading} className="w-full">
+        Create Account
       </Button>
-
+      {displayError && (
+        <p className="form-field__error">
+          <i className="ti ti-alert-circle" /> {displayError}
+        </p>
+      )}
       <div className="auth-switch">
         Already have an account?{" "}
-        <button type="button" onClick={onSwitchToSignIn} className="auth-switch__link">
+        <button
+          type="button"
+          onClick={onSwitchToSignIn}
+          className="auth-switch__link"
+        >
           Sign In
         </button>
       </div>
