@@ -30,22 +30,22 @@ export function SignIn({ onSwitchToRegister, onClose }: SignInProps) {
 
   useEffect(() => {
     // only redirect if the user just logged in via this form, not from a persisted session
-    if (attempted && user) {
-      const role = user.role;
+    if (user) {
+      const role = user.user_roles[0]?.role.name; // assuming single role per user for simplicity
 
       onClose?.();
 
       const roleRouteMap: Record<string, string> = {
-        SUPER_ADMIN:       '/dashboard/super_admin',
-        DEPARTMENT_ADMIN:  '/dashboard/dept_admin',
-        EMPLOYEE:          '/dashboard/employee',
-        RESIDENT:          '/dashboard/resident',
+        SUPER_ADMIN: "/dashboard/super_admin",
+        DEPARTMENT_ADMIN: "/dashboard/dept_admin",
+        EMPLOYEE: "/dashboard/employee",
+        RESIDENT: "/dashboard/resident",
       };
 
       const route = roleRouteMap[role];
       router.push(route);
     }
-  }, [user, attempted, router, onClose]);
+  }, [user, router, onClose]);
 
   useEffect(() => {
     return () => {
@@ -91,9 +91,7 @@ export function SignIn({ onSwitchToRegister, onClose }: SignInProps) {
       <Button type="submit" loading={loading} className="w-full">
         Continue
       </Button>
-      <div className="center-align">
-      {handleError()}
-      </div>
+      <div className="center-align">{handleError()}</div>
       <div className="auth-switch">
         Don't have an account?{" "}
         <button

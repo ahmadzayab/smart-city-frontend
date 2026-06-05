@@ -9,6 +9,7 @@ export interface AuthUser {
   phone_number: string;
   is_active: boolean;
   is_verified: boolean;
+  token: string;
   user_roles: {
     role: {
       id: string;

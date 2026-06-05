@@ -8,6 +8,8 @@ import { Modal } from '@/components/ui/Modal';
 import { SignIn } from '../app/auth/signin/page';
 import { Register } from '../app/auth/register/page';
 import { StatCard } from '@/components/ui/StatCard';
+import { logout } from './store/slices/authSlice';
+import { useAppDispatch } from './store/hook';
 
 type ModalView = 'signin' | 'register' | null;
 
@@ -21,10 +23,16 @@ const STATS = [
 export default function LandingPage() {
   const searchParams = useSearchParams();
   const [view, setView] = useState<ModalView>(null);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (searchParams.get('signin') === 'true') setView('signin');
   }, [searchParams]);
+    useEffect(() => {
+    // If user visits landing page, clear session
+    dispatch(logout());
+    localStorage.removeItem('auth_token');
+  }, []);
 
   return (
     <div className="page">
