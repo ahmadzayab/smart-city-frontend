@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useAppDispatch, useAppSelector } from "../../store/hook";
 import { loginUser, clearError } from "../../store/slices/authSlice";
-import type { Role } from "../../store/slices/authSlice";
 
 // const ROLE_OPTIONS: { value: Role; label: string }[] = [
 //   { value: 'RESIDENT',         label: 'Resident' },
@@ -26,19 +25,27 @@ export function SignIn({ onSwitchToRegister, onClose }: SignInProps) {
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  // const [role, setRole] = React.useState<Role>('RESIDENT');
+  // track whether THIS form submitted a login — prevents auto-redirect on open
+  const [attempted, setAttempted] = React.useState(false);
 
   useEffect(() => {
-    if (user) {
-      const role = (user as any)?.user_roles?.[0]?.role?.name as
-        | Role
-        | undefined;
-      if (role) {
-        onClose?.();
-          router.push("/dashboard/resident");
-      }
+    // only redirect if the user just logged in via this form, not from a persisted session
+    if (attempted && user) {
+      const role = user.role;
+
+      onClose?.();
+
+      const roleRouteMap: Record<string, string> = {
+        SUPER_ADMIN:       '/dashboard/super_admin',
+        DEPARTMENT_ADMIN:  '/dashboard/dept_admin',
+        EMPLOYEE:          '/dashboard/employee',
+        RESIDENT:          '/dashboard/resident',
+      };
+
+      const route = roleRouteMap[role];
+      router.push(route);
     }
-  }, [user, router, onClose]);
+  }, [user, attempted, router, onClose]);
 
   useEffect(() => {
     return () => {
@@ -56,6 +63,7 @@ export function SignIn({ onSwitchToRegister, onClose }: SignInProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setAttempted(true);
     dispatch(loginUser({ email, password }));
   }
 
