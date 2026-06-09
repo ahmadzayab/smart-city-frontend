@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
+import React from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 interface NavbarProps {
   onSignInClick?: () => void;
@@ -13,7 +13,7 @@ export function Navbar({ onSignInClick }: NavbarProps) {
     <nav className="navbar">
       <Link href="/" className="navbar__logo">
         <span className="navbar__logo-dot" />
-        UrbanOS
+        UrbanCity
       </Link>
 
       <div className="flex items-center gap-3">
